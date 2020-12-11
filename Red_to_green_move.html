@@ -422,6 +422,44 @@ summary {
 <pre><code>## The following objects are masked from &#39;package:dplyr&#39;:
 ## 
 ##     between, first, last</code></pre>
+<pre class="r"><code>library(ggplot2)
+library(prob)</code></pre>
+<pre><code>## Warning: package &#39;prob&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## Loading required package: combinat</code></pre>
+<pre><code>## Warning: package &#39;combinat&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;combinat&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:utils&#39;:
+## 
+##     combn</code></pre>
+<pre><code>## Loading required package: fAsianOptions</code></pre>
+<pre><code>## Warning: package &#39;fAsianOptions&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## Loading required package: timeDate</code></pre>
+<pre><code>## Warning: package &#39;timeDate&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## Loading required package: timeSeries</code></pre>
+<pre><code>## Warning: package &#39;timeSeries&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;timeSeries&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:zoo&#39;:
+## 
+##     time&lt;-</code></pre>
+<pre><code>## Loading required package: fBasics</code></pre>
+<pre><code>## Warning: package &#39;fBasics&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;fBasics&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:TTR&#39;:
+## 
+##     volatility</code></pre>
+<pre><code>## Loading required package: fOptions</code></pre>
+<pre><code>## Warning: package &#39;fOptions&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;prob&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:dplyr&#39;:
+## 
+##     intersect, setdiff, union</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, union</code></pre>
 <pre class="r"><code>facebook &lt;- getSymbols(&quot;FB&quot;, src = &quot;yahoo&quot;, from = &quot;2013-01-01&quot;, to = &quot;2020-11-17&quot;, auto.assign = FALSE)</code></pre>
 <pre><code>## &#39;getSymbols&#39; currently uses auto.assign=TRUE by default, but will
 ## use auto.assign=FALSE in 0.5-0. You will still be able to use
@@ -535,58 +573,145 @@ fb &lt;-  mutate(fb, Percent_Difference = ((lead(fb$Open) - fb$Adjusted)/lead(fb
 ## round up your percentage 
 fb$Percent_Difference &lt;- round(fb$Percent_Difference,2)
 ## move down your differences so we can allign with the correct date.
-fb$Percent_Difference &lt;- shift(fb$Percent_Difference,1)</code></pre>
+fb$Percent_Difference &lt;- shift(fb$Percent_Difference,1)
+fb$`200DMA` &lt;- shift(fb$`200DMA`,1)
+fb$`50DMA` &lt;- shift(fb$`50DMA`,1)
+fb$RSI &lt;- shift(fb$RSI,1)
+fb$`Lower-bound` &lt;- shift(fb$`Lower-bound`,1)
+fb$Mavg &lt;- shift(fb$Mavg,1)
+fb$`Upper-bound` &lt;- shift(fb$`Upper-bound`,1)
+fb$PctB &lt;- shift(fb$PctB,1)
+head(fb)</code></pre>
+<pre><code>##         date  Open  High   Low Close   Volume Adjusted 200DMA 50DMA   RSI
+## 1 2013-10-17 51.12 52.22 50.95 52.21 71522000    52.21     NA    NA    NA
+## 2 2013-10-18 54.18 54.83 53.60 54.22 88260000    54.22  44.43 31.73 67.53
+## 3 2013-10-21 54.68 54.81 53.51 53.85 58235000    53.85  44.74 31.86 72.04
+## 4 2013-10-22 54.33 54.76 52.20 52.68 83204000    52.68  45.05 31.99 70.11
+## 5 2013-10-23 51.75 52.25 51.13 51.90 57207000    51.90  45.34 32.10 64.25
+## 6 2013-10-24 52.38 52.84 51.59 52.45 46775000    52.45  45.64 32.22 60.61
+##   Lower-bound  Mavg Upper-bound PctB Percent_Difference
+## 1          NA    NA          NA   NA                 NA
+## 2       46.71 49.48       52.25 0.92               3.64
+## 3       46.62 49.84       53.06 1.18               0.84
+## 4       46.76 50.19       53.63 1.06               0.88
+## 5       46.81 50.42       54.02 0.89              -1.80
+## 6       46.94 50.55       54.15 0.67               0.92</code></pre>
 </div>
 <div id="last-and-a-very-important-step-to-do-is-to-create-a-new-column-that-calculate-winning-trade-and-lossing-trade.-remember-our-theory-is-if-the-opening-price-is-lower-than-the-previous-closing-price-by-a-small-percentage-it-will-rally-back-to-the-previous-closing-price-for-at-least-a-moment.-for-that-we-compare-open-price-to-high-price.-if-the-high-price-is-greater-then-open-price-it-is-a-wining-trade." class="section level4">
 <h4>last and a very important step to do is to create a new column that calculate winning trade and lossing trade. Remember, our theory is, if the opening price is lower than the previous closing price by a small percentage, it will rally back to the previous closing price for at least a moment. For that, we compare open price to high price. if the high price is greater then open price, it is a wining trade.</h4>
 <pre class="r"><code>fb[&quot;Win/Loss&quot;] &lt;- ifelse(fb$High &gt;  shift(fb$Close) &amp; fb$Percent_Difference &lt; 0 ,1, 0)
-
+fb[&quot;MA50&quot;] &lt;- ifelse(fb$Open &gt; fb$`50DMA`,&quot;Above&quot;,&quot;Below&quot;)
+fb[&quot;MA200&quot;] &lt;- ifelse(fb$Open &gt; fb$`200DMA`,&quot;Above&quot;,&quot;Below&quot;)
+fb[&quot;RSI_ind&quot;] &lt;- ifelse(fb$RSI &gt; 30 &amp; fb$RSI &lt; 70, &quot;Above&quot;, &quot;Below&quot;)
+fb[&quot;BBavg&quot;] &lt;- ifelse(fb$Open &gt; fb$Mavg, &quot;Above&quot;,&quot;Below&quot;)
  ## since we are only concern with the days where stock opened lower than previous close, we will use filter to get negative values in percent_Difference column.
 
-filter_data &lt;- filter(fb, Percent_Difference &lt; 0)
+filter_data &lt;- dplyr::filter(fb, Percent_Difference &lt; 0)
 head(filter_data,20)</code></pre>
 <pre><code>##          date  Open  High   Low Close    Volume Adjusted 200DMA 50DMA   RSI
-## 1  2013-10-23 51.75 52.25 51.13 51.90  57207000    51.90  45.64 32.22 60.61
-## 2  2013-10-28 51.54 51.70 49.61 50.23  73472000    50.23  46.52 32.52 52.31
-## 3  2013-10-31 47.16 52.00 46.50 50.21 248809000    50.21  47.20 32.81 52.37
-## 4  2013-11-04 49.37 49.75 48.02 48.22  80371000    48.22  47.58 33.00 44.71
-## 5  2013-11-05 47.79 50.18 47.51 50.11  76835000    50.11  47.76 33.10 52.01
-## 6  2013-11-11 47.04 47.53 45.73 46.20  80910000    46.20  48.31 33.42 39.15
-## 7  2013-11-12 46.00 47.37 45.83 46.61  68196000    46.61  48.40 33.50 40.99
-## 8  2013-11-13 46.23 48.74 46.06 48.71  79245000    48.71  48.54 33.59 49.44
-## 9  2013-11-14 48.70 49.57 48.03 48.99  75117000    48.99  48.67 33.68 50.46
-## 10 2013-11-18 48.47 48.84 45.80 45.83  85910000    45.83  48.81 33.86 39.95
-## 11 2013-11-26 44.66 46.17 43.55 45.89  82016000    45.89  49.03 34.39 42.52
-## 12 2013-12-02 46.90 47.54 46.26 47.06  50774000    47.06  49.07 34.67 47.74
-## 13 2013-12-03 46.75 47.20 46.29 46.73  32086000    46.73  49.06 34.76 46.31
-## 14 2013-12-04 46.46 48.77 46.26 48.62  60890000    48.62  49.06 34.86 54.64
-## 15 2013-12-05 48.15 48.70 47.87 48.34  43855000    48.34  49.04 34.97 53.32
-## 16 2013-12-10 48.64 50.77 48.54 50.25  68479000    50.25  48.94 35.29 60.60
-## 17 2013-12-13 51.66 53.50 51.34 53.32  82641000    53.32  49.04 35.66 67.94
-## 18 2013-12-16 53.25 54.50 52.91 53.81  85119000    53.81  49.09 35.79 69.10
-## 19 2013-12-19 54.33 55.19 53.95 55.05  89753200    55.05  49.51 36.20 70.07
-## 20 2013-12-20 54.93 55.15 54.23 55.12 239824000    55.12  49.63 36.33 70.24
-##    Lower-bound  Mavg Upper-bound PctB Percent_Difference Win/Loss
-## 1        46.94 50.55       54.15 0.67              -1.80        0
-## 2        46.98 50.73       54.48 0.47              -0.80        0
-## 3        46.82 50.65       54.47 0.36              -3.92        1
-## 4        46.62 50.54       54.45 0.26              -0.77        0
-## 5        46.76 50.59       54.41 0.33              -0.90        1
-## 6        46.46 50.50       54.53 0.00              -1.04        0
-## 7        45.96 50.33       54.71 0.07              -0.43        1
-## 8        45.69 50.19       54.69 0.24              -0.82        1
-## 9        45.57 50.04       54.51 0.37              -0.02        1
-## 10       45.68 49.42       53.17 0.15              -1.11        0
-## 11       44.78 47.77       50.76 0.07              -0.36        1
-## 12       44.82 47.31       49.79 0.43              -0.23        1
-## 13       44.79 47.21       49.63 0.40              -0.66        1
-## 14       44.89 47.14       49.39 0.66              -0.58        1
-## 15       45.01 47.08       49.15 0.79              -0.98        1
-## 16       44.86 47.29       49.73 1.03              -0.41        1
-## 17       43.98 47.83       51.67 1.14              -0.33        1
-## 18       43.45 48.06       52.67 1.12              -0.13        1
-## 19       42.83 49.29       55.75 0.92              -2.28        0
-## 20       42.89 49.68       56.47 0.88              -0.22        1</code></pre>
+## 1  2013-10-23 51.75 52.25 51.13 51.90  57207000    51.90  45.34 32.10 64.25
+## 2  2013-10-28 51.54 51.70 49.61 50.23  73472000    50.23  46.26 32.43 59.82
+## 3  2013-10-31 47.16 52.00 46.50 50.21 248809000    50.21  46.97 32.71 47.62
+## 4  2013-11-04 49.37 49.75 48.02 48.22  80371000    48.22  47.43 32.91 50.48
+## 5  2013-11-05 47.79 50.18 47.51 50.11  76835000    50.11  47.58 33.00 44.71
+## 6  2013-11-11 47.04 47.53 45.73 46.20  80910000    46.20  48.21 33.35 43.21
+## 7  2013-11-12 46.00 47.37 45.83 46.61  68196000    46.61  48.31 33.42 39.15
+## 8  2013-11-13 46.23 48.74 46.06 48.71  79245000    48.71  48.40 33.50 40.99
+## 9  2013-11-14 48.70 49.57 48.03 48.99  75117000    48.99  48.54 33.59 49.44
+## 10 2013-11-18 48.47 48.84 45.80 45.83  85910000    45.83  48.77 33.77 50.53
+## 11 2013-11-26 44.66 46.17 43.55 45.89  82016000    45.89  49.01 34.30 37.43
+## 12 2013-12-02 46.90 47.54 46.26 47.06  50774000    47.06  49.08 34.58 47.51
+## 13 2013-12-03 46.75 47.20 46.29 46.73  32086000    46.73  49.07 34.67 47.74
+## 14 2013-12-04 46.46 48.77 46.26 48.62  60890000    48.62  49.06 34.76 46.31
+## 15 2013-12-05 48.15 48.70 47.87 48.34  43855000    48.34  49.06 34.86 54.64
+## 16 2013-12-10 48.64 50.77 48.54 50.25  68479000    50.25  48.94 35.18 55.29
+## 17 2013-12-13 51.66 53.50 51.34 53.32  82641000    53.32  48.95 35.53 64.13
+## 18 2013-12-16 53.25 54.50 52.91 53.81  85119000    53.81  49.04 35.66 67.94
+## 19 2013-12-19 54.33 55.19 53.95 55.05  89753200    55.05  49.35 36.06 73.01
+## 20 2013-12-20 54.93 55.15 54.23 55.12 239824000    55.12  49.51 36.20 70.07
+##    Lower-bound  Mavg Upper-bound PctB Percent_Difference Win/Loss  MA50 MA200
+## 1        46.81 50.42       54.02 0.89              -1.80        0 Above Above
+## 2        46.98 50.73       54.48 0.72              -0.80        0 Above Above
+## 3        46.83 50.65       54.47 0.33              -3.92        1 Above Above
+## 4        46.82 50.64       54.46 0.48              -0.77        0 Above Above
+## 5        46.62 50.54       54.45 0.26              -0.90        1 Above Above
+## 6        46.96 50.63       54.29 0.12              -1.04        0 Above Below
+## 7        46.46 50.50       54.53 0.00              -0.43        1 Above Below
+## 8        45.96 50.33       54.71 0.07              -0.82        1 Above Below
+## 9        45.69 50.19       54.69 0.24              -0.02        1 Above Above
+## 10       45.73 49.78       53.84 0.41              -1.11        0 Above Below
+## 11       45.13 48.00       50.87 0.01              -0.36        1 Above Below
+## 12       44.64 47.48       50.33 0.40              -0.23        1 Above Below
+## 13       44.82 47.31       49.79 0.43              -0.66        1 Above Below
+## 14       44.79 47.21       49.63 0.40              -0.58        1 Above Below
+## 15       44.89 47.14       49.39 0.66              -0.98        1 Above Below
+## 16       44.97 47.12       49.28 0.82              -0.41        1 Above Below
+## 17       44.46 47.63       50.80 1.11              -0.33        1 Above Above
+## 18       43.98 47.83       51.67 1.14              -0.13        1 Above Above
+## 19       42.86 48.89       54.93 1.01              -2.28        0 Above Above
+## 20       42.83 49.29       55.75 0.92              -0.22        1 Above Above
+##    RSI_ind BBavg
+## 1    Above Above
+## 2    Above Above
+## 3    Above Below
+## 4    Above Below
+## 5    Above Below
+## 6    Above Below
+## 7    Above Below
+## 8    Above Below
+## 9    Above Below
+## 10   Above Below
+## 11   Above Below
+## 12   Above Below
+## 13   Above Below
+## 14   Above Below
+## 15   Above Above
+## 16   Above Above
+## 17   Above Above
+## 18   Above Above
+## 19   Below Above
+## 20   Below Above</code></pre>
+</div>
+<div id="lets-visualize-winloss-frequency-of-the-days-where-stock-opened-below-the-previous-close-and-fit-our-model." class="section level4">
+<h4>Lets visualize Win/loss frequency of the days where stock opened below the previous close and fit our model.</h4>
+<pre class="r"><code>glm.fits &lt;- glm(filter_data$`Win/Loss`~ filter_data$Percent_Difference + filter_data$RSI_ind,family=&quot;binomial&quot;)
+summary(glm.fits)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = filter_data$`Win/Loss` ~ filter_data$Percent_Difference + 
+##     filter_data$RSI_ind, family = &quot;binomial&quot;)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.9316  -0.8721   0.6139   0.7436   2.5445  
+## 
+## Coefficients:
+##                                Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)                      1.7764     0.1323  13.429   &lt;2e-16 ***
+## filter_data$Percent_Difference   1.1286     0.1266   8.914   &lt;2e-16 ***
+## filter_data$RSI_indBelow        -0.6171     0.2788  -2.213   0.0269 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 937.15  on 764  degrees of freedom
+## Residual deviance: 808.32  on 762  degrees of freedom
+## AIC: 814.32
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<pre class="r"><code>glm.probs = predict(glm.fits, type = &quot;response&quot;)
+
+glm.pred = rep(&quot;Down&quot;, length(glm.probs))
+glm.pred[glm.probs &gt; .5] = &quot;Up&quot;
+table(glm.pred, filter_data$`Win/Loss`)</code></pre>
+<pre><code>##         
+## glm.pred   0   1
+##     Down  72  28
+##     Up   159 506</code></pre>
+</div>
+<div id="here-is-a-function-that-will-do-all-the-steps-we-just-did-for-any-ticker." class="section level4">
+<h4>Here is a function that will do all the steps we just did for any ticker.</h4>
 <pre class="r"><code>## creating a function that can get any stock price from a given time period and create columns that we need for analysis.
 
 FAANG &lt;- function(ticker){
@@ -603,33 +728,74 @@ FAANG &lt;- function(ticker){
   stock_data &lt;-  mutate(stock_data, Percent_Difference = ((lead(stock_data$Open) - stock_data$Adjusted)/lead(stock_data$Open)*100))
   stock_data$Percent_Difference &lt;- round(stock_data$Percent_Difference,2)
   stock_data$Percent_Difference &lt;- shift(stock_data$Percent_Difference,1)
-  stock_data[&quot;Win/Loss&quot;] &lt;- ifelse(stock_data$High &gt;  shift(stock_data$Close) &amp; stock_data$Percent_Difference &lt; 0 ,1, 0)
-  stock_data &lt;- filter(stock_data, Percent_Difference &lt; 0)
+  stock_data$`200DMA` &lt;- shift(stock_data$`200DMA`,1)
+  stock_data$`50DMA` &lt;- shift(stock_data$`50DMA`,1)
+  stock_data$RSI &lt;- shift(stock_data$RSI,1)
+  stock_data$`Lower-bound` &lt;- shift(stock_data$`Lower-bound`,1)
+  stock_data$Mavg &lt;- shift(stock_data$Mavg,1)
+  stock_data$`Upper-bound` &lt;- shift(stock_data$`Upper-bound`,1)
+  stock_data$PctB &lt;- shift(stock_data$PctB,1)
+  stock_data[&quot;Win/Loss&quot;] &lt;- ifelse(stock_data$High &gt;  shift(stock_data$Close) &amp; stock_data$Percent_Difference &lt; 0 ,1, 0 )
+  stock_data[&quot;MA50&quot;] &lt;- ifelse(stock_data$Open &gt; stock_data$`50DMA`,&quot;Above&quot;,&quot;Below&quot;)
+  stock_data[&quot;MA200&quot;] &lt;- ifelse(stock_data$Open &gt; stock_data$`200DMA`,&quot;Above&quot;,&quot;Below&quot;)
+  stock_data[&quot;RSI_ind&quot;] &lt;- ifelse(stock_data$RSI &gt; 30 &amp; stock_data$RSI &lt; 70, &quot;Above&quot;, &quot;Below&quot;)
+  stock_data[&quot;BBavg&quot;] &lt;- ifelse(stock_data$Open &gt; stock_data$Mavg, &quot;Above&quot;,&quot;Below&quot;)
+  stock_data &lt;- dplyr::filter(stock_data, Percent_Difference &lt; 0)
+  stock_data &lt;- stock_data[,c(6,14,15,16,17,18,19,20)]
   return(stock_data)
 }
 
 ## since we are interested in FAANG stocks, we will only use these stock 
-test &lt;- FAANG(&quot;FB&quot;)
+facebook &lt;- FAANG(&quot;FB&quot;)
 Amazon &lt;- FAANG(&quot;AMZN&quot;)
 Apple &lt;- FAANG(&quot;AAPL&quot;)
 Netflix &lt;- FAANG(&quot;NFLX&quot;)
-Google &lt;- FAANG(&quot;GOOG&quot;)
+Google &lt;- FAANG(&quot;GOOG&quot;)</code></pre>
+<pre class="r"><code>ggplot(Amazon, aes(`Win/Loss`)) +
+  geom_bar(fill = &quot;#0073C2FF&quot;)</code></pre>
+<p><img src="data:image/png;base64,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EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM5ICqL62SAzrEiwS8EjCRA6q+tEoO6BAvEvBKwEQOqPrSKjmgQ7xIwCsBEzmg6kur5IAO8SIBrwRM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" width="672" /></p>
+<pre class="r"><code>table(filter_data$`Win/Loss`)</code></pre>
+<pre><code>## 
+##   0   1 
+## 231 534</code></pre>
+<pre class="r"><code>glm.fits &lt;- glm(`Win/Loss`~. -MA50-MA200-RSI_ind-Volume, data = facebook ,family=&quot;binomial&quot;)
+summary(glm.fits)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = `Win/Loss` ~ . - MA50 - MA200 - RSI_ind - Volume, 
+##     family = &quot;binomial&quot;, data = facebook)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.1004  -0.8206   0.6173   0.7417   2.3695  
+## 
+## Coefficients:
+##                    Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)          2.8827     0.4429   6.509 7.57e-11 ***
+## PctB                -1.4436     0.4942  -2.921  0.00349 ** 
+## Percent_Difference   1.1505     0.1317   8.733  &lt; 2e-16 ***
+## BBavgBelow          -0.6412     0.3183  -2.015  0.04394 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 937.15  on 764  degrees of freedom
+## Residual deviance: 803.86  on 761  degrees of freedom
+## AIC: 811.86
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<pre class="r"><code>glm.probs = predict(glm.fits, type = &quot;response&quot;)
 
-head(test)</code></pre>
-<pre><code>##         date  Open  High   Low Close    Volume Adjusted 200DMA 50DMA   RSI
-## 1 2013-10-23 51.75 52.25 51.13 51.90  57207000    51.90  45.64 32.22 60.61
-## 2 2013-10-28 51.54 51.70 49.61 50.23  73472000    50.23  46.52 32.52 52.31
-## 3 2013-10-31 47.16 52.00 46.50 50.21 248809000    50.21  47.20 32.81 52.37
-## 4 2013-11-04 49.37 49.75 48.02 48.22  80371000    48.22  47.58 33.00 44.71
-## 5 2013-11-05 47.79 50.18 47.51 50.11  76835000    50.11  47.76 33.10 52.01
-## 6 2013-11-11 47.04 47.53 45.73 46.20  80910000    46.20  48.31 33.42 39.15
-##   Lower-bound  Mavg Upper-bound PctB Percent_Difference Win/Loss
-## 1       46.94 50.55       54.15 0.67              -1.80        0
-## 2       46.98 50.73       54.48 0.47              -0.80        0
-## 3       46.82 50.65       54.47 0.36              -3.92        1
-## 4       46.62 50.54       54.45 0.26              -0.77        0
-## 5       46.76 50.59       54.41 0.33              -0.90        1
-## 6       46.46 50.50       54.53 0.00              -1.04        0</code></pre>
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs &gt; .5] = 1
+table(glm.pred, facebook$`Win/Loss`)</code></pre>
+<pre><code>##         
+## glm.pred   0   1
+##        0  73  28
+##        1 158 506</code></pre>
+<pre class="r"><code>mean(glm.pred != facebook$`Win/Loss`)</code></pre>
+<pre><code>## [1] 0.2431373</code></pre>
 </div>
 </div>
 
