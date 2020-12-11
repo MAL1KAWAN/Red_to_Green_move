@@ -17,6 +17,8 @@ for example, if Apple's closing price on monday was 100 and Tuesday opening pric
 library(dplyr)
 library(quantmod) ## using getSymbol function from quantmod library to get the stock price from www.yahoo.com. this can get us latest price as well.
 library(data.table)
+library(ggplot2)
+library(prob)
 
 facebook <- getSymbols("FB", src = "yahoo", from = "2013-01-01", to = "2020-11-17", auto.assign = FALSE)
 
@@ -102,7 +104,14 @@ fb <-  mutate(fb, Percent_Difference = ((lead(fb$Open) - fb$Adjusted)/lead(fb$Op
 fb$Percent_Difference <- round(fb$Percent_Difference,2)
 ## move down your differences so we can allign with the correct date.
 fb$Percent_Difference <- shift(fb$Percent_Difference,1)
-
+fb$`200DMA` <- shift(fb$`200DMA`,1)
+fb$`50DMA` <- shift(fb$`50DMA`,1)
+fb$RSI <- shift(fb$RSI,1)
+fb$`Lower-bound` <- shift(fb$`Lower-bound`,1)
+fb$Mavg <- shift(fb$Mavg,1)
+fb$`Upper-bound` <- shift(fb$`Upper-bound`,1)
+fb$PctB <- shift(fb$PctB,1)
+head(fb)
 ```
 
 
@@ -110,15 +119,39 @@ fb$Percent_Difference <- shift(fb$Percent_Difference,1)
 
 ```{r}
 fb["Win/Loss"] <- ifelse(fb$High >  shift(fb$Close) & fb$Percent_Difference < 0 ,1, 0)
-
+fb["MA50"] <- ifelse(fb$Open > fb$`50DMA`,"Above","Below")
+fb["MA200"] <- ifelse(fb$Open > fb$`200DMA`,"Above","Below")
+fb["RSI_ind"] <- ifelse(fb$RSI > 30 & fb$RSI < 70, "Above", "Below")
+fb["BBavg"] <- ifelse(fb$Open > fb$Mavg, "Above","Below")
  ## since we are only concern with the days where stock opened lower than previous close, we will use filter to get negative values in percent_Difference column.
 
-filter_data <- filter(fb, Percent_Difference < 0)
+filter_data <- dplyr::filter(fb, Percent_Difference < 0)
 head(filter_data,20)
 
 ```
 
 
+
+
+#### Lets visualize Win/loss frequency of the days where stock opened below the previous close and fit our model. 
+```{r}
+
+
+
+glm.fits <- glm(filter_data$`Win/Loss`~ filter_data$Percent_Difference + filter_data$RSI_ind,family="binomial")
+summary(glm.fits)
+
+glm.probs = predict(glm.fits, type = "response")
+
+glm.pred = rep("Down", length(glm.probs))
+glm.pred[glm.probs > .5] = "Up"
+table(glm.pred, filter_data$`Win/Loss`)
+
+
+
+```
+
+#### Here is a function that will do all the steps we just did for any ticker.
 
 ```{r}
 ## creating a function that can get any stock price from a given time period and create columns that we need for analysis.
@@ -137,21 +170,52 @@ FAANG <- function(ticker){
   stock_data <-  mutate(stock_data, Percent_Difference = ((lead(stock_data$Open) - stock_data$Adjusted)/lead(stock_data$Open)*100))
   stock_data$Percent_Difference <- round(stock_data$Percent_Difference,2)
   stock_data$Percent_Difference <- shift(stock_data$Percent_Difference,1)
-  stock_data["Win/Loss"] <- ifelse(stock_data$High >  shift(stock_data$Close) & stock_data$Percent_Difference < 0 ,1, 0)
-  stock_data <- filter(stock_data, Percent_Difference < 0)
+  stock_data$`200DMA` <- shift(stock_data$`200DMA`,1)
+  stock_data$`50DMA` <- shift(stock_data$`50DMA`,1)
+  stock_data$RSI <- shift(stock_data$RSI,1)
+  stock_data$`Lower-bound` <- shift(stock_data$`Lower-bound`,1)
+  stock_data$Mavg <- shift(stock_data$Mavg,1)
+  stock_data$`Upper-bound` <- shift(stock_data$`Upper-bound`,1)
+  stock_data$PctB <- shift(stock_data$PctB,1)
+  stock_data["Win/Loss"] <- ifelse(stock_data$High >  shift(stock_data$Close) & stock_data$Percent_Difference < 0 ,1, 0 )
+  stock_data["MA50"] <- ifelse(stock_data$Open > stock_data$`50DMA`,"Above","Below")
+  stock_data["MA200"] <- ifelse(stock_data$Open > stock_data$`200DMA`,"Above","Below")
+  stock_data["RSI_ind"] <- ifelse(stock_data$RSI > 30 & stock_data$RSI < 70, "Above", "Below")
+  stock_data["BBavg"] <- ifelse(stock_data$Open > stock_data$Mavg, "Above","Below")
+  stock_data <- dplyr::filter(stock_data, Percent_Difference < 0)
+  stock_data <- stock_data[,c(6,14,15,16,17,18,19,20)]
   return(stock_data)
 }
 
 ## since we are interested in FAANG stocks, we will only use these stock 
-test <- FAANG("FB")
+facebook <- FAANG("FB")
 Amazon <- FAANG("AMZN")
 Apple <- FAANG("AAPL")
 Netflix <- FAANG("NFLX")
 Google <- FAANG("GOOG")
 
-head(test)
 
 ```
 
 
+```{r}
 
+ggplot(Amazon, aes(`Win/Loss`)) +
+  geom_bar(fill = "#0073C2FF")
+
+table(filter_data$`Win/Loss`)
+
+glm.fits <- glm(`Win/Loss`~. -MA50-MA200-RSI_ind-Volume, data = facebook ,family="binomial")
+summary(glm.fits)
+
+glm.probs = predict(glm.fits, type = "response")
+
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs > .5] = 1
+table(glm.pred, facebook$`Win/Loss`)
+
+mean(glm.pred != facebook$`Win/Loss`)
+
+
+
+```
