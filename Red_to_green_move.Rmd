@@ -1,26 +1,29 @@
 ---
 title: "Project_5310"
-author: "Malik"
+author: "Malik Awan, Jas Sur"
 date: "11/18/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-## Red To Green Move
-WE came up with a day trading strategy which We want to test. strategy is simple. Any FAANG stock that opens up few percent below the previous closing price, will rally back to the previous closing price. FAANG is an acronym that refers to five prominent publicly traded American technology companies: Facebook (FB), Amazon (AMZN), Apple (AAPL), Netflix (NFLX); and Alphabet (GOOG) (formerly known as Google).
-for example, if Apple's closing price on monday was 100 and Tuesday opening price is 99, which is 1% below the monday's closing price, according to our strategy, the probability of stock going back to 100, at least for a moment, is very high. since its a day trade, we buy at the open and sell at the previous closing price.For this analysis, we are going to use change percentage, volume, and 3 techincal indicators Moving averages, Bollinger bands, and Relative strength index. We will explain each of the techincal indicators as we move forward with our analysis. We are going to use historic stock price data.  
-
-```{r}
 library(dplyr)
 library(quantmod) ## using getSymbol function from quantmod library to get the stock price from www.yahoo.com. this can get us latest price as well.
 library(data.table)
 library(ggplot2)
 library(prob)
+library(tidyverse)
+library(car)
+```
 
-facebook <- getSymbols("FB", src = "yahoo", from = "2013-01-01", to = "2020-11-17", auto.assign = FALSE)
+## Red To Green Move
+We came up with a day trading strategy which we want to test; strategy is simple. Any FAANG stock that opens up few percent below the previous closing price, will rally back to the previous closing price. FAANG is an acronym that refers to five prominent publicly traded American technology companies: Facebook (FB), Amazon (AMZN), Apple (AAPL), Netflix (NFLX); and Alphabet (GOOG) (formerly known as Google).
+for example, if Apple's closing price on Monday was 100 and Tuesday opening price is 99, which is 1% below the Monday's closing price, according to our strategy, the probability of stock going back to 100, at least for a moment, is very high. Since it's a day trade, we buy at the open and sell at the previous closing price. For this analysis, we are going to use change percentage, volume, and 3 technical indicators Moving-Averages, Bollinger-bands, and Relative-strength-index. We will explain each of the technical indicators as we move forward with our analysis. We are going to use historic stock price data live from the source "yahoo".   
+
+```{r}
+
+current_date <- format(Sys.time(), "%Y-%m-%d")
+facebook <- getSymbols("FB", src = "yahoo", from = "2013-01-01", to = current_date, auto.assign = FALSE)
 
 head(facebook)
 ```
@@ -32,10 +35,10 @@ candleChart(facebook, TA=c(addVo()), subset = '2020-01::2020-02', theme = "white
 
 ```
 
-**Each candlestick represent single day.length of the candle represents high and the low of the day. candle will be green if it closes above the open price and orange or red if it closes below the open price of the same day. At the bottom of the chart, we have volume in millions. here is a link to understand candlestick in details https://www.investopedia.com/trading/candlestick-charting-what-is-it/ **
+**Each candlestick represent single day. Length of the candle represents high and the low of the day. Candle will be green if it closes above the open price and orange or red if it closes below the open price of the same day. At the bottom of the chart, we have volume in millions. here is a link to understand candlestick in details https://www.investopedia.com/trading/candlestick-charting-what-is-it/ **
 
 ## Moving Averages
-#### Moving averages are one of the most common techincal indicators in stocks. It helps analysts identify trends in price fluctuations. Lets add Moving averages to our Dataframe and Visualize it.
+#### Moving averages are one of the most common techincal indicators in stocks. It helps analysts identify trends in price fluctuations. Let's add Moving averages to our Dataframe and Visualize it.
 
 ```{r}
 
@@ -56,22 +59,22 @@ candleChart(facebook, TA=c(addVo(),addSMA(n=200,col = 'blue'),addSMA(n=50,col = 
 ```{r}
 facebook <- cbind(facebook, round(RSI(facebook$FB.Adjusted),2))
 
-candleChart(facebook, TA=c(addVo(),addSMA(n=200,col = 'blue'),addSMA(n=50,col = 'red'), addRSI(n=14)),  subset = '2020-01::2020-10', theme = "white")
+candleChart(facebook, TA=c(addVo(), addSMA(n=200,col = 'blue'), addSMA(n=50,col = 'red'), addRSI(n=14)),  subset = '2020-01::2020-12', theme = "white")
 ```
 
-**Technical traders use the centerline to show shifts in the trend. If RSI is above 50, momentum is considered up and traders can look for opportunities to buy the market. A drop below 50 would indicate the development of a new bearish market trend. here is a link to learn more about RSI indicator https://www.investopedia.com/articles/active-trading/042114/overbought-or-oversold-use-relative-strength-index-find-out.asp**
+**Technical traders use the center-line to show shifts in the trend. If RSI is above 50, momentum is considered up and traders can look for opportunities to buy the market. A drop below 50 would indicate the development of a new bearish market trend. here is a link to learn more about RSI indicator https://www.investopedia.com/articles/active-trading/042114/overbought-or-oversold-use-relative-strength-index-find-out.asp**
 
 ## Bollingers Bands
 
-#### Bollinger Bands are a technical indicator that forms a channel around the price movements of an asset.Bollinger bands have three lines, an upper, middle and lower. The middle line is a moving average of prices,The upper and lower bands are drawn on either side of the moving average. The distance between the upper and lower band is determined by standard deviations. The trader determines how many standard deviations they want the indicator set at, although many use two standard deviations from the average.lets add Bolliner bands and visualize it.
+#### Bollinger Bands are a technical indicator that forms a channel around the price movements of an asset. Bollinger bands have three lines, an upper, middle and lower. The middle line is a moving average of prices, the upper and lower bands are drawn on either side of the moving average. The distance between the upper and lower band is determined by standard deviations. The trader determines how many standard deviations they want the indicator set at, although many use two standard deviations from the average. Lets add Bolliner bands and visualize it.
 
 ```{r}
 facebook <- cbind(facebook,round(BBands(HLC(facebook)),2))
 
-candleChart(facebook, TA=c(addVo(),addSMA(n=200,col = 'blue'),addSMA(n=50,col = 'red'), addRSI(n=14),addBBands()),  subset = '2020-01::2020-10', theme = "white")
+candleChart(facebook, TA=c(addVo(),addSMA(n=200,col = 'blue'),addSMA(n=50,col = 'red'), addRSI(n=14),addBBands()),  subset = '2020-01::2020-12', theme = "white")
 ```
 
-**Red doted lines around the candlesticks are upper and lower bounds. gray dotted line is the average. by defualt, average is 20SMA and bounds  are  average +-  2 standard deviation. Traders tend to buy over the average and sell below.**
+**Red doted lines around the candlesticks are upper and lower bounds. Gray dotted line is the average. by default, average is 20SMA and bounds  are  average +-2 standard deviation. Traders tend to buy over the average and sell below.**
 
 
 ## Data cleaning and Transforming 
@@ -115,7 +118,8 @@ head(fb)
 ```
 
 
-#### last and a very important step to do is to create a new column that calculate winning trade and lossing trade. Remember, our theory is, if the opening price is lower than the previous closing price by a small percentage, it will rally back to the previous closing price for at least a moment. For that, we compare open price to high price. if the high price is greater then open price, it is a wining trade.
+#### We need to create a new columns that calculate winning trade and lossing trade.As a day trader,one will have to make a decision right before the market opens.The only data trader will have available is the previously calculated technical indicators. We will convert those indicators data in to Above or below so that trader can make a quick decision. Remember, our theory is, if the opening price is lower than the previous closing price by a small percentage, it will rally back to the previous closing price for at least a moment.Based on our theory, Trader will look at 3 indicators, and Percent difference in Pre-market (pre market is an hour before market opens) and place a trade. we compare open price to high price. if the high price is greater then open price, it is a wining trade.
+
 
 ```{r}
 fb["Win/Loss"] <- ifelse(fb$High >  shift(fb$Close) & fb$Percent_Difference < 0 ,1, 0)
@@ -126,30 +130,10 @@ fb["BBavg"] <- ifelse(fb$Open > fb$Mavg, "Above","Below")
  ## since we are only concern with the days where stock opened lower than previous close, we will use filter to get negative values in percent_Difference column.
 
 filter_data <- dplyr::filter(fb, Percent_Difference < 0)
-head(filter_data,20)
 
 ```
 
 
-
-
-#### Lets visualize Win/loss frequency of the days where stock opened below the previous close and fit our model. 
-```{r}
-
-
-
-glm.fits <- glm(filter_data$`Win/Loss`~ filter_data$Percent_Difference + filter_data$RSI_ind,family="binomial")
-summary(glm.fits)
-
-glm.probs = predict(glm.fits, type = "response")
-
-glm.pred = rep("Down", length(glm.probs))
-glm.pred[glm.probs > .5] = "Up"
-table(glm.pred, filter_data$`Win/Loss`)
-
-
-
-```
 
 #### Here is a function that will do all the steps we just did for any ticker.
 
@@ -157,7 +141,9 @@ table(glm.pred, filter_data$`Win/Loss`)
 ## creating a function that can get any stock price from a given time period and create columns that we need for analysis.
 
 FAANG <- function(ticker){
-  stock_data <- getSymbols(ticker, src = "yahoo", from = "2013-01-01", to = "2020-11-17", auto.assign = FALSE)
+  current_date <- format(Sys.time(), "%Y-%m-%d")
+
+  stock_data <- getSymbols(ticker, src = "yahoo", from = "2013-01-01", to = current_date, auto.assign = FALSE)
   colnames(stock_data) <- c("Open", "High", "Low", "Close", "Volume", "Adjusted")
   stock_data <- cbind(stock_data, round(SMA(stock_data$Adjusted, 50),2)) 
   stock_data <- cbind(stock_data, round(SMA(stock_data$Adjusted, 200),2))
@@ -183,29 +169,35 @@ FAANG <- function(ticker){
   stock_data["RSI_ind"] <- ifelse(stock_data$RSI > 30 & stock_data$RSI < 70, "Above", "Below")
   stock_data["BBavg"] <- ifelse(stock_data$Open > stock_data$Mavg, "Above","Below")
   stock_data <- dplyr::filter(stock_data, Percent_Difference < 0)
-  stock_data <- stock_data[,c(6,14,15,16,17,18,19,20)]
+  stock_data <- stock_data[,c(1,14,15,16,17,18,19,20)]
   return(stock_data)
 }
 
-## since we are interested in FAANG stocks, we will only use these stock 
+## since we are interested in FAANG stocks, we will only use these stock and we will filter the data to keep only relevant columns.
 facebook <- FAANG("FB")
 Amazon <- FAANG("AMZN")
 Apple <- FAANG("AAPL")
 Netflix <- FAANG("NFLX")
 Google <- FAANG("GOOG")
 
+head(facebook)
+
+
 
 ```
 
-
+Let's check the logistics regression and measure mean to check how well it would predict.
 ```{r}
 
-ggplot(Amazon, aes(`Win/Loss`)) +
+
+
+
+ggplot(facebook, aes(`Win/Loss`)) +
   geom_bar(fill = "#0073C2FF")
 
-table(filter_data$`Win/Loss`)
+table(facebook$`Win/Loss`)
 
-glm.fits <- glm(`Win/Loss`~. -MA50-MA200-RSI_ind-Volume, data = facebook ,family="binomial")
+glm.fits <- glm(`Win/Loss`~ Percent_Difference + RSI_ind , data = facebook  ,family="binomial")
 summary(glm.fits)
 
 glm.probs = predict(glm.fits, type = "response")
@@ -214,8 +206,81 @@ glm.pred = rep(0, length(glm.probs))
 glm.pred[glm.probs > .5] = 1
 table(glm.pred, facebook$`Win/Loss`)
 
-mean(glm.pred != facebook$`Win/Loss`)
+mean(glm.pred == facebook$`Win/Loss`)
 
+
+ggplot(facebook, aes(x=Percent_Difference, y=`Win/Loss`)) + geom_point() + stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE)
+
+```
+
+**The mean value is around 76%, which is better than a random guess. So it's evident that the prediction using logistics regression can give us better results than random guessing.**
+
+
+
+## Logistic regression diagnostics
+
+```{r}
+
+# Select only numeric predictors
+mydata <- facebook %>%
+  dplyr::select_if(is.numeric) 
+predictors <- colnames(mydata)
+# Bind the logit and tidying the data for plot
+mydata <- mydata %>%
+  mutate(logit = log(glm.probs/(1-glm.probs))) %>%
+  gather(key = "predictors", value = "predictor.value", -logit)
+
+ggplot(mydata, aes(logit, predictor.value))+
+  geom_point(size = 0.5, alpha = 0.5) +
+  geom_smooth(method = "loess") + 
+  theme_bw() + 
+  facet_wrap(~predictors, scales = "free_y")
+
+```
+
+**PctB which is a percent measure of Bollinger bands, shows non-linearity. Win/loss is binary so we dont have to worry about that**
+
+#### Lets see variance inflation factor(VIF) for multicollinearity in regression analysis.
+```{r}
+
+vif(glm.fits)
+
+```
+
+**it looks ok as non of the independent variables VIF values are above 5**
+
+
+#### Let's test it using training-test data split and ascertain how well can it predict test data using training data. We use data upto 2016 for training and rest for testing.
+
+```{r}
+train=(facebook$date<2016) ## index of the training set
+
+new_model <- glm(`Win/Loss`~Percent_Difference + PctB, data = facebook,subset = train, family="binomial")
+summary(new_model)
+
+fb_2016 <- facebook[!train, ]
+winloss_2016 <- facebook$`Win/Loss`[!train]
+
+predicted_probs <- predict(new_model, newdata = fb_2016, type = "response")
+
+predicted_dir <- rep(0, length(predicted_probs))
+predicted_dir[predicted_probs > 0.5] <- 1
+
+table(predicted_dir, winloss_2016)
+
+mean(predicted_dir == winloss_2016)
+
+
+ggplot(facebook, aes(x=Percent_Difference, y=`Win/Loss`)) + geom_point() + stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE)
+
+```
+
+**The mean value for test data using training data is around 74%, which is better than a random guess, so it's evident that the model is able to predict well.**
+
+
+## KNN Model
+
+```{r}
 
 
 ```
